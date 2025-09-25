@@ -1,0 +1,24 @@
+{
+  "name": "ai-generate-beauty",
+  "version": "1.0.0",
+  "description": "AI时尚穿搭工具: 使用GPT-5-mini分析穿搭图片，使用Gemini生成图片描述",
+  "main": "dist/analyze-fashion.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "analyze": "node --loader ts-node/esm analyze-fashion.ts",
+    "generate": "node --loader ts-node/esm generate.ts"
+  },
+  "keywords": ["fashion", "ai", "analysis", "openrouter", "gpt", "typescript"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "openai": "^4.0.0"
+  }
+}
