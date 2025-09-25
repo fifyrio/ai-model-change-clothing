@@ -16,6 +16,11 @@ export class AIService {
 
     // 调用GPT模型分析图片
     async analyzeWithGPT(base64Image: string, filename: string): Promise<string> {
+        console.log('📡 正在调用GPT API...');
+        console.log('🔧 模型:', AI_MODELS.GPT);
+        console.log('📝 提示词长度:', GPT_ANALYZE_PROMPT.length);
+        console.log('🖼️ 图片数据长度:', base64Image.length);
+
         const content: MessageContent[] = [
             {
                 type: "text",
@@ -27,22 +32,39 @@ export class AIService {
             }
         ];
 
-        const completion = await this.client.chat.completions.create({
-            model: AI_MODELS.GPT,
-            messages: [{ role: "user", content }],
-            max_tokens: 1500,
-            temperature: 0.7
-        }, {
-            headers: {
-                "HTTP-Referer": openRouterConfig.siteUrl,
-                "X-Title": openRouterConfig.siteName
-            }
-        });
+        try {
+            const completion = await this.client.chat.completions.create({
+                model: AI_MODELS.GPT,
+                messages: [{ role: "user", content }],
+                max_tokens: 1500,
+                temperature: 0.7
+            }, {
+                headers: {
+                    "HTTP-Referer": openRouterConfig.siteUrl,
+                    "X-Title": openRouterConfig.siteName
+                }
+            });
 
-        if (completion.choices?.[0]?.message?.content) {
-            return completion.choices[0].message.content;
+            console.log('📥 API响应状态:', completion ? '成功' : '失败');
+            console.log('📊 响应选择数量:', completion.choices?.length || 0);
+            
+            if (completion.choices?.[0]?.message?.content) {
+                const responseContent = completion.choices[0].message.content;
+                console.log('✅ 响应内容长度:', responseContent.length);
+                console.log('📄 响应内容预览:', responseContent.substring(0, 100) + '...');
+                return responseContent;
+            }
+            
+            console.log('❌ API响应详情:', JSON.stringify(completion, null, 2));
+            throw new Error('GPT API响应格式错误或内容为空');
+        } catch (error: any) {
+            console.error('🚨 GPT API调用失败:', error.message);
+            if (error.response) {
+                console.error('🔴 API错误响应:', error.response.status, error.response.statusText);
+                console.error('📋 错误详情:', JSON.stringify(error.response.data, null, 2));
+            }
+            throw error;
         }
-        throw new Error('GPT API响应格式错误或内容为空');
     }
 
     // 分析图片接口 - 只使用GPT模型

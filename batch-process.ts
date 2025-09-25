@@ -4,64 +4,52 @@ import * as path from 'path';
 import { analyzeSingleImage } from './analyze-fashion.js';
 import { ImageGenerator } from './image-generator.js';
 import { saveBase64Image } from './utils.js';
+import { SUPPORTED_IMAGE_FORMATS } from './config.js';
 
-async function main() {
-    const referenceImagePath = process.argv[2];
-    const modelImageUrl = process.argv[3];
+// 获取目录中所有支持的图片文件
+function getImageFiles(dirPath: string): string[] {
+    const files = fs.readdirSync(dirPath);
+    return files
+        .filter(file => {
+            const ext = path.extname(file).toLowerCase();
+            return SUPPORTED_IMAGE_FORMATS.includes(ext);
+        })
+        .map(file => path.join(dirPath, file));
+}
 
-    if (!referenceImagePath) {
-        console.error('请提供参考图片路径作为第一个参数');
-        console.error('用法: npm run batch "参考图片路径" "模特图片URL"');
-        console.error('示例: npm run batch "./reference.jpg" "https://example.com/model.jpg"');
-        process.exit(1);
-    }
-
-    if (!modelImageUrl) {
-        console.error('请提供模特图片URL作为第二个参数');
-        console.error('用法: npm run batch "参考图片路径" "模特图片URL"');
-        console.error('示例: npm run batch "./reference.jpg" "https://example.com/model.jpg"');
-        process.exit(1);
-    }
-
-    // 检查参考图片文件是否存在
-    const fullReferenceImagePath = path.resolve(referenceImagePath);
-    if (!fs.existsSync(fullReferenceImagePath)) {
-        console.error(`参考图片文件不存在: ${fullReferenceImagePath}`);
-        process.exit(1);
-    }
-
-    console.log('=== 批处理开始 ===');
-    console.log('参考图片:', fullReferenceImagePath);
-    console.log('模特图片URL:', modelImageUrl);
-    console.log('');
+// 处理单张图片
+async function processSingleImage(imagePath: string, modelImageUrl: string, imageIndex: number, totalImages: number): Promise<void> {
+    const fileName = path.basename(imagePath);
+    
+    console.log(`\n📷 [${imageIndex}/${totalImages}] 处理图片: ${fileName}`);
+    console.log('='.repeat(50));
 
     try {
-        // 第一步：使用 analyze-fashion.ts 的方法分析参考图片提取穿搭细节
-        console.log('🔍 第一步：分析参考图片，提取穿搭细节...');
+        // 第一步：分析参考图片提取穿搭细节
+        console.log('🔍 分析图片，提取穿搭细节...');
 
-        const analysisResult = await analyzeSingleImage(fullReferenceImagePath);
+        const analysisResult = await analyzeSingleImage(imagePath);
 
         if (!analysisResult.success) {
-            console.error('❌ 分析参考图片失败:', analysisResult.error);
-            process.exit(1);
+            console.error('❌ 分析失败:', analysisResult.error);
+            return;
         }
 
         const clothingDetails = analysisResult.analysis;
         console.log('✅ 穿搭细节提取完成:');
         console.log('---');
-        console.log(clothingDetails);
+        console.log(clothingDetails.substring(0, 200) + '...');
         console.log('---');
-        console.log('');
 
         // 第二步：使用提取的穿搭细节生成新图片
-        console.log('🎨 第二步：使用提取的穿搭细节生成新图片...');
+        console.log('🎨 生成新图片...');
 
         const imageGenerator = new ImageGenerator();
         const generationResult = await imageGenerator.generateImage(clothingDetails, modelImageUrl);
 
         if (!generationResult.success) {
             console.error('❌ 生成图片失败:', generationResult.error);
-            process.exit(1);
+            return;
         }
 
         if (generationResult.result) {
@@ -70,12 +58,12 @@ async function main() {
             // 检查是否包含生成的图片
             if (generationResult.result.startsWith('http') || generationResult.result.startsWith('data:image/')) {
                 try {
-                    // 保存图片到 generated 目录
-                    const modelName = "BatchGenerated";
+                    // 保存图片到 generated 目录，使用原图片名作为前缀
+                    const baseFileName = path.parse(fileName).name;
+                    const modelName = `Batch_${baseFileName}`;
                     const savedPath = saveBase64Image(generationResult.result, 'generated', modelName);
 
                     console.log('📁 图片已保存到:', savedPath);
-                    console.log('👗 使用的穿搭描述:', clothingDetails.substring(0, 100) + '...');
 
                 } catch (saveError: any) {
                     console.error('❌ 保存图片失败:', saveError.message);
@@ -87,8 +75,57 @@ async function main() {
             }
         }
 
-        console.log('');
-        console.log('🎉 批处理完成！');
+        // 添加延时避免API限制
+        console.log('⏳ 等待1秒...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+    } catch (error: any) {
+        console.error('❌ 处理图片时出错:', error.message);
+    }
+}
+
+async function main() {
+    const modelImageUrl = process.argv[2];
+
+    if (!modelImageUrl) {
+        console.error('请提供模特图片URL作为参数');
+        console.error('用法: npm run batch "模特图片URL"');
+        console.error('示例: npm run batch "https://example.com/model.jpg"');
+        process.exit(1);
+    }
+
+    const chuandaiDir = './chuandai';
+    
+    // 检查chuandai目录是否存在
+    if (!fs.existsSync(chuandaiDir)) {
+        console.error(`目录不存在: ${chuandaiDir}`);
+        console.error('请确保chuandai目录存在并包含要处理的图片');
+        process.exit(1);
+    }
+
+    // 获取所有图片文件
+    const imageFiles = getImageFiles(chuandaiDir);
+    
+    if (imageFiles.length === 0) {
+        console.error(`在 ${chuandaiDir} 目录中未找到支持的图片文件`);
+        console.error('支持的格式:', SUPPORTED_IMAGE_FORMATS.join(', '));
+        process.exit(1);
+    }
+
+    console.log('🚀 === 批量处理开始 ===');
+    console.log('📂 扫描目录:', path.resolve(chuandaiDir));
+    console.log('📷 找到图片:', imageFiles.length, '张');
+    console.log('🖼️  模特图片URL:', modelImageUrl);
+    console.log('📁 支持格式:', SUPPORTED_IMAGE_FORMATS.join(', '));
+    
+    try {
+        // 逐一处理每张图片
+        for (let i = 0; i < imageFiles.length; i++) {
+            await processSingleImage(imageFiles[i], modelImageUrl, i + 1, imageFiles.length);
+        }
+
+        console.log('\n🎉 === 所有图片处理完成！===');
+        console.log(`📊 总计处理: ${imageFiles.length} 张图片`);
 
     } catch (error: any) {
         console.error('❌ 批处理过程中出错:', error.message);
