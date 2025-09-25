@@ -60,7 +60,7 @@ export class ImageGenerator {
     }
 
     // 生成图片接口
-    async generateImage(clothing: string, imageUrl: string = "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev/lin/front.png"): Promise<ImageGenerationResult> {
+    async generateImage(clothing: string, imageUrl: string = "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev/Qiao/1.jpg"): Promise<ImageGenerationResult> {
         const startTime = new Date();
         
         try {
