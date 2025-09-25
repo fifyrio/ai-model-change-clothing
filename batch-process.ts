@@ -76,8 +76,8 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
         }
 
         // 添加延时避免API限制
-        console.log('⏳ 等待1秒...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('⏳ 等待3秒...');
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
     } catch (error: any) {
         console.error('❌ 处理图片时出错:', error.message);
