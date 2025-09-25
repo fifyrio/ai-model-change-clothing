@@ -84,14 +84,36 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
     }
 }
 
-async function main() {
-    const modelImageUrl = process.argv[2];
+// 生成随机模特图片URL
+function getRandomModelUrl(name: string = 'lin'): string {
+    const host = "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev";
+    const randomNumber = Math.floor(Math.random() * 10) + 1; // 1-10之间的随机数
+    return `${host}/${name}/frame_${randomNumber}.jpg`;
+}
 
-    if (!modelImageUrl) {
-        console.error('请提供模特图片URL作为参数');
-        console.error('用法: npm run batch "模特图片URL"');
+async function main() {
+    const inputParam = process.argv[2];
+    const nameParam = process.argv[3];
+
+    // 检查参数
+    if (!inputParam) {
+        console.error('请提供模特图片URL或使用random参数');
+        console.error('用法: npm run batch "模特图片URL" 或 npm run batch random [name]');
         console.error('示例: npm run batch "https://example.com/model.jpg"');
+        console.error('示例: npm run batch random  (默认使用lin，随机选择frame_1到frame_10)');
+        console.error('示例: npm run batch random Qiao  (使用Qiao目录，随机选择frame_1到frame_10)');
         process.exit(1);
+    }
+
+    // 处理random参数
+    let modelImageUrl: string;
+    if (inputParam.toLowerCase() === 'random') {
+        const modelName = nameParam || 'lin'; // 如果没有提供name参数，默认使用'lin'
+        modelImageUrl = getRandomModelUrl(modelName);
+        console.log('🎲 使用随机模特图片URL:', modelImageUrl);
+        console.log('📂 使用模特目录:', modelName);
+    } else {
+        modelImageUrl = inputParam;
     }
 
     const chuandaiDir = './chuandai';

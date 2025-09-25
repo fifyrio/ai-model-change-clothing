@@ -51,7 +51,7 @@ export class AIService {
             if (completion.choices?.[0]?.message?.content) {
                 const responseContent = completion.choices[0].message.content;
                 console.log('✅ 响应内容长度:', responseContent.length);
-                console.log('📄 响应内容预览:', responseContent.substring(0, 100) + '...');
+                console.log('📄 响应内容预览:', responseContent);
                 return responseContent;
             }
             
