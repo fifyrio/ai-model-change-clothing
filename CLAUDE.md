@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build the project**: `npm run build`
 - **Analyze fashion images**: `npm run analyze [directory]` (defaults to 'chuandai' directory)
 - **Generate clothing images**: `npm run generate "clothing description" [image URL]`
+- **Generate multi-view images**: `npm run multi-views [directory]` (defaults to 'randomGesture' directory)
 - **Install dependencies**: `npm install`
 
 ## Project Architecture
@@ -63,3 +64,34 @@ Requires `.env` file with:
 - API calls include rate limiting delays (1 second between requests)
 - Generated images are automatically saved with descriptive filenames and timestamps
 - Error handling includes detailed logging for debugging API issues
+
+## 常见错误排查
+
+### generate-multi-views.ts 脚本错误分析
+
+**问题**: 运行 `npm run multi-views` 时出现模块执行错误
+```
+node:internal/modules/run_main:104
+    triggerUncaughtException(
+    ^
+[Object: null prototype] {
+  [Symbol(nodejs.util.inspect.custom)]: [Function: [nodejs.util.inspect.custom]]
+}
+```
+
+**原因分析**:
+1. **Shebang 问题**: 原始脚本使用了 `#!/usr/bin/env ts-node`，与项目的 ESM 配置不兼容
+2. **模块执行检查**: 使用了不兼容的 `import.meta.url === file://${process.argv[1]}` 检查方式
+3. **导出问题**: 混合了导出声明和直接执行逻辑
+
+**解决方案**:
+1. **修改 Shebang**: 改为 `#!/usr/bin/env node` 与其他脚本保持一致
+2. **移除模块检查**: 删除 `import.meta.url` 检查，直接在脚本末尾调用 `main()`
+3. **参考标准模式**: 按照 `generate.ts` 的模式重构脚本结构
+4. **正确处理本地图片**: 使用 `imageToBase64()` 函数将本地图片转换为 base64 格式
+
+**最佳实践**:
+- 所有 CLI 脚本都应使用 `#!/usr/bin/env node` 作为 Shebang
+- 脚本末尾使用标准的错误处理模式: `main().catch((error) => { ... })`
+- 使用项目已有的工具函数，避免重复实现
+- 遵循现有脚本的代码结构和错误处理方式

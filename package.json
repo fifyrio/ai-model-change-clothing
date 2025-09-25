@@ -8,7 +8,8 @@
     "build": "tsc",
     "analyze": "node --loader ts-node/esm analyze-fashion.ts",
     "generate": "node --loader ts-node/esm generate.ts",
-    "batch": "node --loader ts-node/esm batch-process.ts"
+    "batch": "node --loader ts-node/esm batch-process.ts",
+    "multi-views": "node --loader ts-node/esm generate-multi-views.ts"
   },
   "keywords": ["fashion", "ai", "analysis", "openrouter", "gpt", "typescript"],
   "author": "",

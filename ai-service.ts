@@ -36,7 +36,7 @@ export class AIService {
             const completion = await this.client.chat.completions.create({
                 model: AI_MODELS.GPT,
                 messages: [{ role: "user", content }],
-                max_tokens: 1500,
+                max_tokens: 4000,
                 temperature: 0.7
             }, {
                 headers: {

@@ -30,7 +30,7 @@ export class ImageGenerator {
         const completion = await this.client.chat.completions.create({
             model: AI_MODELS.GEMINI,
             messages: [{ role: "user", content }],
-            max_tokens: 1500,
+            max_tokens: 3000,
             temperature: 0.7
         }, {
             headers: {
