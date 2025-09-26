@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Analyze fashion images**: `npm run analyze [directory]` (defaults to 'chuandai' directory)
 - **Generate clothing images**: `npm run generate "clothing description" [image URL]`
 - **Generate multi-view images**: `npm run multi-views [directory]` (defaults to 'randomGesture' directory)
+- **Change body figure**: `npm run figure-change [directory]` (defaults to 'figureChanger' directory)
 - **Install dependencies**: `npm install`
 
 ## Project Architecture
@@ -16,6 +17,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is an AI-powered fashion tool that:
 1. **Analyzes fashion images** using GPT-5-mini to generate detailed clothing descriptions
 2. **Generates new clothing images** using Gemini 2.5 Flash with image preview capabilities
+3. **Creates multi-view images** (front/side/back perspectives) of people in photos
+4. **Transforms body figures** to specified proportions (Voluptuous body, Small waist, wide hips)
 
 ### Key Components
 
@@ -34,6 +37,8 @@ This is an AI-powered fashion tool that:
 #### Entry Points
 - **`analyze-fashion.ts`**: CLI tool for batch analyzing fashion images in directories
 - **`generate.ts`**: CLI tool for generating new clothing images based on descriptions
+- **`generate-multi-views.ts`**: CLI tool for creating front/side/back views of people in images
+- **`figure-changer.ts`**: CLI tool for transforming body figures to specified proportions
 
 ### AI Models Integration
 - Uses **OpenRouter** as the API gateway

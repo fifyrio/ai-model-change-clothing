@@ -9,7 +9,8 @@
     "analyze": "node --loader ts-node/esm analyze-fashion.ts",
     "generate": "node --loader ts-node/esm generate.ts",
     "batch": "node --loader ts-node/esm batch-process.ts",
-    "multi-views": "node --loader ts-node/esm generate-multi-views.ts"
+    "multi-views": "node --loader ts-node/esm generate-multi-views.ts",
+    "figure-change": "node --loader ts-node/esm figure-changer.ts"
   },
   "keywords": ["fashion", "ai", "analysis", "openrouter", "gpt", "typescript"],
   "author": "",
