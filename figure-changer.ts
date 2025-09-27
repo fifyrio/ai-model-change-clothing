@@ -12,8 +12,9 @@ export class FigureChanger {
 
     constructor() {
         this.imageGenerator = new ImageGenerator();
-        // this.targetFigure = 'Voluptuous body, Small waist, wide hips';
-        this.targetFigure = 'Busty chest';
+        this.targetFigure = 'Voluptuous body, Small waist, wide hips';
+        // this.targetFigure = 'Small waist, wide hips';
+        // this.targetFigure = 'Voluptuous body';
     }
 
     // 为单个图片变换身材
@@ -137,8 +138,7 @@ async function main(): Promise<void> {
     const directory = args[0] || 'figureChanger';
     
     console.log('💃 AI 身材变换器');
-    console.log('==========================================');
-    console.log('🎯 目标身材: Voluptuous body, Small waist, wide hips');
+    console.log('==========================================');    
     console.log('==========================================');
     
     try {
