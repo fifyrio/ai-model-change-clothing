@@ -12,9 +12,9 @@ export class FigureChanger {
 
     constructor() {
         this.imageGenerator = new ImageGenerator();
-        this.targetFigure = 'Voluptuous body, Small waist, wide hips';
+        // this.targetFigure = 'Voluptuous body, Small waist, wide hips';
         // this.targetFigure = 'Small waist, wide hips';
-        // this.targetFigure = 'Voluptuous body';
+        this.targetFigure = 'Voluptuous body';
     }
 
     // 为单个图片变换身材

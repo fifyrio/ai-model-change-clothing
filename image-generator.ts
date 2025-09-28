@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { openRouterConfig, AI_MODELS } from './config.js';
 import { MessageContent, ImageGenerationResult } from './types.js';
-import { IMAGE_GENERATION_PROMPT } from './prompts.js';
+import { IMAGE_GENERATION_PROMPT, IMAGE_GENERATION_NEW_BG_GESTURE_PROMPT } from './prompts.js';
 
 // 图片生成服务类
 export class ImageGenerator {

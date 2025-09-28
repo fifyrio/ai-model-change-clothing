@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { openRouterConfig, AI_MODELS } from './config.js';
 import { MessageContent, ImageAnalysisResult } from './types.js';
-import { GPT_ANALYZE_CLOTHING_PROMPT } from './prompts.js';
+import { GPT_ANALYZE_CLOTHING_PROMPT,GPT_ANALYZE_BG_GESTURE_PROMPT } from './prompts.js';
 
 // AI服务类
 export class AIService {
@@ -18,7 +18,6 @@ export class AIService {
     async analyzeWithGPT(base64Image: string, filename: string): Promise<string> {
         console.log('📡 正在调用GPT API...');
         console.log('🔧 模型:', AI_MODELS.GPT);
-        console.log('📝 提示词长度:', GPT_ANALYZE_CLOTHING_PROMPT.length);
         console.log('🖼️ 图片数据长度:', base64Image.length);
 
         const content: MessageContent[] = [
