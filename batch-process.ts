@@ -18,7 +18,7 @@ function getImageFiles(dirPath: string): string[] {
 }
 
 // 处理单张图片
-async function processSingleImage(imagePath: string, modelImageUrl: string, imageIndex: number, totalImages: number): Promise<void> {
+async function processSingleImage(imagePath: string, modelImageUrl: string, imageIndex: number, totalImages: number, useBase64Mode: boolean = false): Promise<void> {
     const fileName = path.basename(imagePath);
     
     console.log(`\n📷 [${imageIndex}/${totalImages}] 处理图片: ${fileName}`);
@@ -42,10 +42,12 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
         console.log('---');
 
         // 第二步：使用提取的穿搭细节生成新图片
-        console.log('🎨 生成新图片...');
+        console.log(`🎨 生成新图片${useBase64Mode ? '（Base64模式）' : ''}...`);
 
         const imageGenerator = new ImageGenerator();
-        const generationResult = await imageGenerator.generateImage(clothingDetails, modelImageUrl);
+        const generationResult = useBase64Mode 
+            ? await imageGenerator.generateImageBase64(clothingDetails, modelImageUrl)
+            : await imageGenerator.generateImage(clothingDetails, modelImageUrl);
 
         if (!generationResult.success) {
             console.error('❌ 生成图片失败:', generationResult.error);
@@ -53,25 +55,75 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
         }
 
         if (generationResult.result) {
-            console.log('✅ 图片生成完成');
+            console.log(`✅ 图片生成完成:${generationResult.result}`);
 
-            // 检查是否包含生成的图片
-            if (generationResult.result.startsWith('http') || generationResult.result.startsWith('data:image/')) {
-                try {
+            try {
+                // 尝试解析JSON格式的响应（仅在Base64模式下）
+                let imageData = generationResult.result;
+                let description = '';
+                
+                if (useBase64Mode) {
+                    try {
+                        let jsonContent = generationResult.result.trim();
+                        
+                        // 如果包装在markdown代码块中，提取JSON内容
+                        if (jsonContent.includes('```json')) {
+                            const match = jsonContent.match(/```json\s*(\{[\s\S]*?\})\s*```/);
+                            if (match) {
+                                jsonContent = match[1];
+                            }
+                        }
+                        
+                        // 尝试解析JSON
+                        if (jsonContent.startsWith('{')) {
+                            const jsonResponse = JSON.parse(jsonContent);
+                            
+                            // 检查元数据，了解响应类型
+                            if (jsonResponse._meta) {
+                                console.log('📊 响应元信息:', jsonResponse._meta);
+                                if (jsonResponse._meta.has_truncated_base64) {
+                                    console.log('⚠️  检测到base64数据被截断，尝试使用images字段');
+                                }
+                                if (jsonResponse._meta.check_images_field) {
+                                    console.log('💡 提示：检查API响应的images字段获取完整图片');
+                                }
+                            }
+                            
+                            if (jsonResponse.image_data && jsonResponse.image_data.length > 100) {
+                                imageData = jsonResponse.image_data;
+                                description = jsonResponse.description || '';
+                                console.log('📝 图片描述:', description);
+                            } else if (jsonResponse.description) {
+                                description = jsonResponse.description;
+                                console.log('📝 图片描述:', description);
+                                console.log('ℹ️  未获得完整图片数据，但生成请求已发送');
+                            }
+                        }
+                    } catch (jsonError) {
+                        console.log('📝 非JSON响应，直接处理为图片数据');
+                    }
+                }
+
+                // 检查是否包含生成的图片
+                if (imageData.startsWith('http') || imageData.startsWith('data:image/')) {
                     // 保存图片到 generated 目录，使用原图片名作为前缀
                     const baseFileName = path.parse(fileName).name;
-                    const modelName = `Batch_${baseFileName}`;
-                    const savedPath = saveBase64Image(generationResult.result, 'generated', modelName);
+                    const modelName = `Batch_${baseFileName}${useBase64Mode ? '_base64' : ''}`;
+                    const savedPath = saveBase64Image(imageData, 'generated', modelName);
 
                     console.log('📁 图片已保存到:', savedPath);
-
-                } catch (saveError: any) {
-                    console.error('❌ 保存图片失败:', saveError.message);
-                    console.log('📝 生成结果:', generationResult.result);
+                    if (description) {
+                        console.log('💬 描述:', description);
+                    }
+                } else {
+                    // 如果不是图片数据，显示结果类型
+                    console.log('📝 生成结果类型:', typeof imageData);
+                    console.log('📄 内容预览:', imageData.substring(0, 200) + (imageData.length > 200 ? '...' : ''));
                 }
-            } else {
-                // 如果不是图片数据，直接显示结果
-                console.log('📝 生成结果:', generationResult.result);
+
+            } catch (saveError: any) {
+                console.error('❌ 保存图片失败:', saveError.message);
+                console.log('📝 原始生成结果:', generationResult.result.substring(0, 500) + '...');
             }
         }
 
@@ -94,26 +146,39 @@ function getRandomModelUrl(name: string = 'lin'): string {
 async function main() {
     const inputParam = process.argv[2];
     const nameParam = process.argv[3];
+    const modeParam = process.argv[4];
 
     // 检查参数
     if (!inputParam) {
         console.error('请提供模特图片URL或使用random参数');
-        console.error('用法: npm run batch "模特图片URL" 或 npm run batch random [name]');
+        console.error('用法: npm run batch "模特图片URL" [name] [mode]');
         console.error('示例: npm run batch "https://example.com/model.jpg"');
         console.error('示例: npm run batch random  (默认使用lin，随机选择frame_1到frame_10)');
         console.error('示例: npm run batch random Qiao  (使用Qiao目录，随机选择frame_1到frame_10)');
+        console.error('示例: npm run batch random Qiao base64  (使用Base64模式)');
         process.exit(1);
     }
 
-    // 处理random参数
+    // 处理random参数和Base64模式
     let modelImageUrl: string;
+    let useBase64Mode = false;
+    
     if (inputParam.toLowerCase() === 'random') {
         const modelName = nameParam || 'lin'; // 如果没有提供name参数，默认使用'lin'
         modelImageUrl = getRandomModelUrl(modelName);
         console.log('🎲 使用随机模特图片URL:', modelImageUrl);
         console.log('📂 使用模特目录:', modelName);
+        
+        // 检查是否启用Base64模式
+        useBase64Mode = Boolean((nameParam && nameParam.toLowerCase() === 'base64') || (modeParam && modeParam.toLowerCase() === 'base64'));
     } else {
         modelImageUrl = inputParam;
+        // 检查是否启用Base64模式
+        useBase64Mode = Boolean((nameParam && nameParam.toLowerCase() === 'base64') || (modeParam && modeParam.toLowerCase() === 'base64'));
+    }
+    
+    if (useBase64Mode) {
+        console.log('🔄 启用Base64模式 - 将尝试获取JSON格式的base64图片数据');
     }
 
     const chuandaiDir = './chuandai';
@@ -138,12 +203,13 @@ async function main() {
     console.log('📂 扫描目录:', path.resolve(chuandaiDir));
     console.log('📷 找到图片:', imageFiles.length, '张');
     console.log('🖼️  模特图片URL:', modelImageUrl);
+    console.log('⚙️  处理模式:', useBase64Mode ? 'Base64模式（尝试获取JSON格式数据）' : '普通模式');
     console.log('📁 支持格式:', SUPPORTED_IMAGE_FORMATS.join(', '));
     
     try {
         // 逐一处理每张图片
         for (let i = 0; i < imageFiles.length; i++) {
-            await processSingleImage(imageFiles[i], modelImageUrl, i + 1, imageFiles.length);
+            await processSingleImage(imageFiles[i], modelImageUrl, i + 1, imageFiles.length, useBase64Mode);
         }
 
         console.log('\n🎉 === 所有图片处理完成！===');
