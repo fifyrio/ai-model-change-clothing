@@ -10,6 +10,7 @@ npm run batch "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev/ranrantu/cove
 npm run batch "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev/tk/6.png"
 
 ---
+npm run batch random lin base64
 
 npm run batch random Qiao
 
