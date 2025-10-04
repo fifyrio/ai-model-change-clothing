@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { analyzeSingleImage } from './analyze-fashion.js';
 import { ImageGenerator } from './image-generator.js';
-import { saveBase64Image } from './utils.js';
+import { saveBase64Image, saveImageMetadata } from './utils.js';
 import { SUPPORTED_IMAGE_FORMATS } from './config.js';
 
 // 获取目录中所有支持的图片文件
@@ -111,7 +111,14 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
                     const modelName = `Batch_${baseFileName}${useBase64Mode ? '_base64' : ''}`;
                     const savedPath = saveBase64Image(imageData, 'generated', modelName);
 
+                    // 保存图片元数据到 JSON 文件
+                    const metadataPath = saveImageMetadata(savedPath, {
+                        clothingDescription: clothingDetails,
+                        generationTimestamp: generationResult.timestamp
+                    });
+
                     console.log('📁 图片已保存到:', savedPath);
+                    console.log('📄 元数据已保存到:', metadataPath);
                     if (description) {
                         console.log('💬 描述:', description);
                     }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { ImageGenerator } from './image-generator.js';
-import { saveBase64Image } from './utils.js';
+import { saveBase64Image, saveImageMetadata } from './utils.js';
 
 async function main() {
     const clothing = process.argv[2];
@@ -31,19 +31,38 @@ async function main() {
             
             // 检查是否包含生成的图片
             if (result.result !== "") {                
-                const imageUrl = result.result;
+                const response = result.result;
                 
-                try {
-                    // 保存图片到 generated 目录
-                    const fileName = clothing.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_');
-                    const savedPath = saveBase64Image(imageUrl, 'generated', girlName);
-                    
-                    console.log('✅ 图片已成功生成并保存');
-                    console.log('📁 保存路径:', savedPath);
-                    console.log('👗 服装描述:', clothing);
-                    
-                } catch (saveError: any) {
-                    console.error('❌ 保存图片失败:', saveError.message);                    
+                // 检查是否为有效的 base64 图片格式
+                const isBase64Image = response.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+                
+                if (isBase64Image) {
+                    try {
+                        // 保存图片到 generated 目录
+                        const savedPath = saveBase64Image(response, 'generated', girlName);
+                        
+                        // 保存图片元数据到 JSON 文件
+                        const metadataPath = saveImageMetadata(savedPath, {
+                            clothingDescription: clothing,
+                            generationTimestamp: result.timestamp
+                        });
+                        
+                        console.log('✅ 图片已成功生成并保存');
+                        console.log('📁 保存路径:', savedPath);
+                        console.log('📄 元数据路径:', metadataPath);
+                        console.log('👗 服装描述:', clothing);
+                        
+                    } catch (saveError: any) {
+                        console.error('❌ 保存图片失败:', saveError.message);                    
+                    }
+                } else if (response.startsWith('http')) {
+                    // 如果是 URL 链接
+                    console.log('🔗 生成的图片URL:', response);
+                    console.log('💡 请手动下载图片或使用其他工具处理URL');
+                } else {
+                    // 如果是其他格式的响应
+                    console.log('📝 生成结果:', response);
+                    console.log('💡 响应不是有效的图片格式，可能是文本描述或错误信息');
                 }
             } else {
                 // 如果不是图片数据，直接显示结果

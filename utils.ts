@@ -79,3 +79,31 @@ export function saveBase64Image(base64Data: string, outputDir: string, fileName:
         throw error;
     }
 }
+
+// 保存图片元数据到 JSON 文件
+export function saveImageMetadata(
+    imagePath: string, 
+    metadata: {
+        clothingDescription: string;
+        generationTimestamp: Date;
+    }
+): string {
+    try {
+        const outputDir = path.dirname(imagePath);
+        const imageFileName = path.basename(imagePath, path.extname(imagePath));
+        const jsonFileName = `${imageFileName}.json`;
+        const jsonPath = path.join(outputDir, jsonFileName);
+
+        const jsonData = {
+            imageName: path.basename(imagePath),
+            clothingDetails: metadata.clothingDescription,
+            timestamp: metadata.generationTimestamp.toISOString()
+        };
+
+        fs.writeFileSync(jsonPath, JSON.stringify(jsonData, null, 2));
+        return jsonPath;
+    } catch (error: any) {
+        console.error('保存元数据失败:', error.message);
+        throw error;
+    }
+}
