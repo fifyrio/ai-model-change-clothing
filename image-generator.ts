@@ -26,7 +26,7 @@ export class ImageGenerator {
                 image_url: { url: imageUrl }
             }
         ];
-
+        console.log("🔍 Gemini API请求:", content);
         const completion = await this.client.chat.completions.create({
             model: AI_MODELS.GEMINI,
             messages: [{ role: "user", content }],
@@ -41,6 +41,7 @@ export class ImageGenerator {
 
         const choice = completion.choices?.[0];
         const message = choice?.message as any;
+        console.log("🔍 Gemini API响应:", completion);
         
         // 优先检查是否有生成的图片
         if (message?.images && message.images.length > 0) {
