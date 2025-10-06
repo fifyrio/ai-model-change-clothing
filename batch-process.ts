@@ -147,7 +147,9 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
 function getRandomModelUrl(name: string = 'lin'): string {
     const host = "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev";
     const randomNumber = Math.floor(Math.random() * 10) + 1; // 1-10之间的随机数
-    return `${host}/${name}/frame_${randomNumber}.jpg`;
+    // 确保名称为小写
+    const lowerCaseName = name.toLowerCase();
+    return `${host}/${lowerCaseName}/frame_${randomNumber}.jpg`;
 }
 
 async function main() {
