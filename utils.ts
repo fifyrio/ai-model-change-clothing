@@ -82,7 +82,7 @@ export function saveBase64Image(base64Data: string, outputDir: string, fileName:
 
 // 保存图片元数据到 JSON 文件
 export function saveImageMetadata(
-    imagePath: string, 
+    imagePath: string,
     metadata: {
         clothingDescription: string;
         generationTimestamp: Date;
@@ -104,6 +104,74 @@ export function saveImageMetadata(
         return jsonPath;
     } catch (error: any) {
         console.error('保存元数据失败:', error.message);
+        throw error;
+    }
+}
+
+// 验证 URL 格式
+export function isValidUrl(urlString: string): boolean {
+    try {
+        new URL(urlString);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// 将 base64 编码的图片数据解码为 Buffer
+export function decodeBase64Image(base64Data: string): Buffer {
+    // 移除可能的空白字符和换行
+    const cleanBase64 = base64Data.replace(/[\s\n\r]/g, '');
+
+    // 解码 base64 并返回 Buffer
+    return Buffer.from(cleanBase64, 'base64');
+}
+
+// 获取图片文件扩展名（从 MIME 类型）
+export function getImageExtension(mimeType: string): string {
+    const extensionMap: { [key: string]: string } = {
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'image/gif': '.gif',
+        'image/webp': '.webp',
+        'image/bmp': '.bmp'
+    };
+    return extensionMap[mimeType] || '.jpg'; // 默认使用 jpg
+}
+
+// 从 data URI 解析并保存图片
+export function saveDataUriImage(dataUri: string, outputDir: string, fileName: string): string {
+    try {
+        // 确保输出目录存在
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        // 解析 data URI 获取 mime type 和 base64 数据
+        const matches = dataUri.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) {
+            throw new Error('无效的 data URI 格式');
+        }
+
+        const [, mimeType, base64Data] = matches;
+
+        // 解码 base64 图片数据
+        const imageBuffer = decodeBase64Image(base64Data);
+
+        // 生成文件名
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const extension = getImageExtension(mimeType);
+        const fullFileName = `${fileName}_${timestamp}${extension}`;
+        const filePath = path.join(outputDir, fullFileName);
+
+        // 保存文件
+        fs.writeFileSync(filePath, imageBuffer);
+
+        console.log(`✅ 图片已保存: ${filePath} (${imageBuffer.length} bytes, ${mimeType})`);
+
+        return filePath;
+    } catch (error: any) {
+        console.error('保存 data URI 图片失败:', error.message);
         throw error;
     }
 }

@@ -1,80 +1,78 @@
 #!/usr/bin/env node
 import { ImageGenerator } from './image-generator.js';
-import { saveBase64Image, saveImageMetadata } from './utils.js';
 
 async function main() {
     const clothing = process.argv[2];
     const imageUrl = process.argv[3];
-    
+
     if (!clothing) {
-        console.error('请提供服装描述作为参数');
+        console.error('❌ 请提供服装描述作为参数');
         console.error('用法: npm run generate "服装描述" [图片URL]');
         process.exit(1);
     }
-    
-    console.log('正在生成图片...');
-    console.log('服装描述:', clothing);
+
+    console.log('\n🎨 正在生成图片...');
+    console.log('👗 服装描述:', clothing);
     if (imageUrl) {
-        console.log('使用图片:', imageUrl);
+        console.log('📸 使用图片:', imageUrl);
     } else {
-        console.log('使用默认模特图片');
+        console.log('📸 使用默认模特图片');
     }
-    
+    console.log('');
+
     const generator = new ImageGenerator();
-    
+    const girlName = "Generated";
+
     try {
-        const result = await generator.generateImage(clothing, imageUrl);
-        const girlName = "Lin";
-        
-        if (result.success && result.result) {
-            console.log('\n=== 图片生成结果 ===');
-            
-            // 检查是否包含生成的图片
-            if (result.result !== "") {                
-                const response = result.result;
-                
-                // 检查是否为有效的 base64 图片格式
-                const isBase64Image = response.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-                
-                if (isBase64Image) {
-                    try {
-                        // 保存图片到 generated 目录
-                        const savedPath = saveBase64Image(response, 'generated', girlName);
-                        
-                        // 保存图片元数据到 JSON 文件
-                        const metadataPath = saveImageMetadata(savedPath, {
-                            clothingDescription: clothing,
-                            generationTimestamp: result.timestamp
-                        });
-                        
-                        console.log('✅ 图片已成功生成并保存');
-                        console.log('📁 保存路径:', savedPath);
-                        console.log('📄 元数据路径:', metadataPath);
-                        console.log('👗 服装描述:', clothing);
-                        
-                    } catch (saveError: any) {
-                        console.error('❌ 保存图片失败:', saveError.message);                    
-                    }
-                } else if (response.startsWith('http')) {
-                    // 如果是 URL 链接
-                    console.log('🔗 生成的图片URL:', response);
+        // 使用优化后的 generateImage 方法，自动保存文件
+        const result = await generator.generateImage(
+            clothing,
+            imageUrl,
+            true,  // saveToFile = true
+            girlName
+        );
+
+        if (result.success) {
+            console.log('\n=== ✅ 图片生成成功 ===');
+
+            if (result.savedPath) {
+                // 图片已自动保存
+                console.log('📁 保存路径:', result.savedPath);
+                if (result.metadataPath) {
+                    console.log('📄 元数据路径:', result.metadataPath);
+                }
+                if (result.decodedImage) {
+                    console.log('📦 图片信息:', {
+                        mimeType: result.decodedImage.mimeType,
+                        size: `${(result.decodedImage.size / 1024).toFixed(2)} KB`
+                    });
+                }
+                console.log('👗 服装描述:', clothing);
+            } else if (result.result) {
+                // 处理其他类型的结果
+                if (result.result.startsWith('http')) {
+                    console.log('🔗 生成的图片URL:', result.result);
                     console.log('💡 请手动下载图片或使用其他工具处理URL');
+                } else if (result.result.startsWith('data:image/')) {
+                    console.log('📷 生成的图片 (data URI)');
+                    console.log('💡 图片数据长度:', result.result.length);
                 } else {
-                    // 如果是其他格式的响应
-                    console.log('📝 生成结果:', response);
+                    console.log('📝 生成结果:', result.result);
                     console.log('💡 响应不是有效的图片格式，可能是文本描述或错误信息');
                 }
             } else {
-                // 如果不是图片数据，直接显示结果
-                console.log('📝 生成结果:', result.result);
+                console.log('⚠️  生成成功但无内容返回');
             }
         } else {
-            console.error('❌ 生成图片时出错:', result.error);
+            console.error('\n❌ 生成图片失败:', result.error);
             process.exit(1);
         }
-        
+
     } catch (error: any) {
-        console.error('❌ 生成图片时出错:', error.message);
+        console.error('\n❌ 生成图片时出错:', error.message);
+        if (error.stack) {
+            console.error('Stack trace:', error.stack);
+        }
         process.exit(1);
     }
 }
