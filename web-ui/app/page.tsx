@@ -7,6 +7,12 @@ interface FilePreview {
   preview: string;
 }
 
+interface GeneratedImage {
+  name: string;
+  path: string;
+  timestamp: number;
+}
+
 export default function Home() {
   const [selectedFiles, setSelectedFiles] = useState<FilePreview[]>([]);
   const [character, setCharacter] = useState<string>('lin');
@@ -15,6 +21,7 @@ export default function Home() {
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [generateStatus, setGenerateStatus] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
 
   const processFiles = (files: FileList | null) => {
     if (files && files.length > 0) {
@@ -126,6 +133,19 @@ export default function Home() {
     }
   };
 
+  const fetchGeneratedImages = async () => {
+    try {
+      const response = await fetch('/api/results');
+      const data = await response.json();
+
+      if (response.ok && data.images) {
+        setGeneratedImages(data.images);
+      }
+    } catch (error) {
+      console.error('Error fetching generated images:', error);
+    }
+  };
+
   const handleGenerate = async () => {
     if (selectedFiles.length === 0) {
       setGenerateStatus('Please upload files first');
@@ -134,6 +154,7 @@ export default function Home() {
 
     setGenerating(true);
     setGenerateStatus('Generating images... This may take a while.');
+    setGeneratedImages([]); // Clear previous results
 
     try {
       const response = await fetch('/api/generate', {
@@ -148,6 +169,8 @@ export default function Home() {
 
       if (response.ok) {
         setGenerateStatus(`Generation completed successfully for character: ${data.character}`);
+        // Fetch and display generated images
+        await fetchGeneratedImages();
       } else {
         setGenerateStatus(`Generation failed: ${data.error}`);
       }
@@ -345,6 +368,60 @@ export default function Home() {
             )}
           </div>
 
+          {/* Generated Results Section */}
+          {generatedImages.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold text-gray-700">
+                Generated Results ({generatedImages.length} images)
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {generatedImages.map((image, index) => (
+                  <div
+                    key={index}
+                    className="relative group border-2 border-gray-200 rounded-lg overflow-hidden hover:border-green-400 transition-colors shadow-md"
+                  >
+                    <img
+                      src={`/api/image/${encodeURIComponent(image.name)}`}
+                      alt={image.name}
+                      className="w-full h-64 object-contain bg-gray-50"
+                    />
+                    <div className="p-3 bg-white">
+                      <p className="text-xs text-gray-600 truncate font-medium">
+                        {image.name}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(image.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="absolute top-2 right-2">
+                      <a
+                        href={`/api/image/${encodeURIComponent(image.name)}`}
+                        download={image.name}
+                        className="bg-white hover:bg-green-50 text-green-600 p-2 rounded-full shadow-lg transition-colors"
+                        title="Download image"
+                      >
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                          />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Info Section */}
           <div className="bg-blue-50 p-4 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">How it works:</h3>
@@ -353,6 +430,7 @@ export default function Home() {
               <li>Select a character model (lin, Qiao, or lin_home_1)</li>
               <li>Click Generate to run: npm run batch random [character]</li>
               <li>Wait for the AI to generate new images with your selected character</li>
+              <li>Generated images will appear below with download buttons</li>
             </ol>
           </div>
         </div>
