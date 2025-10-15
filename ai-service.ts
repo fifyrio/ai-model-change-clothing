@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { openRouterConfig, AI_MODELS } from './config.js';
 import { MessageContent, ImageAnalysisResult } from './types.js';
-import { GPT_ANALYZE_CLOTHING_PROMPT,GPT_ANALYZE_BG_GESTURE_PROMPT } from './prompts.js';
+import { GPT_ANALYZE_CLOTHING_PROMPT, GPT_ANALYZE_BG_GESTURE_PROMPT, XIAOHONGSHU_TITLE_PROMPT } from './prompts.js';
 
 // AI服务类
 export class AIService {
@@ -69,10 +69,10 @@ export class AIService {
     // 分析图片接口 - 只使用GPT模型
     async analyzeImage(base64Image: string, filename: string): Promise<ImageAnalysisResult> {
         const startTime = new Date();
-        
+
         try {
             const analysis = await this.analyzeWithGPT(base64Image, filename);
-            
+
             return {
                 filename,
                 modelName: 'OpenAI GPT-5-mini',
@@ -89,6 +89,51 @@ export class AIService {
                 success: false,
                 error: error.message
             };
+        }
+    }
+
+    // 生成小红书爆款标题
+    async generateXiaohongshuTitle(clothingDescription: string, imageCount: number): Promise<string> {
+        console.log('📝 正在生成小红书标题...');
+        console.log('🔧 模型:', AI_MODELS.GPT);
+
+        // 替换提示词中的占位符
+        const prompt = XIAOHONGSHU_TITLE_PROMPT
+            .replace('{clothingDescription}', clothingDescription)
+            .replace('{imageCount}', imageCount.toString());
+
+        try {
+            const completion = await this.client.chat.completions.create({
+                model: AI_MODELS.GPT,
+                messages: [
+                    {
+                        role: "user",
+                        content: prompt
+                    }
+                ],
+                max_tokens: 2000,  // 增加 token 限制，因为 GPT-5-mini 会使用推理模式
+                temperature: 0.8  // 稍高的温度以获得更有创意的标题
+            }, {
+                headers: {
+                    "HTTP-Referer": openRouterConfig.siteUrl,
+                    "X-Title": openRouterConfig.siteName
+                }
+            });
+
+            if (completion.choices?.[0]?.message?.content) {
+                const title = completion.choices[0].message.content.trim();
+                console.log('✅ 标题生成成功');
+                return title;
+            }
+
+            throw new Error('标题生成失败：API响应格式错误或内容为空');
+        } catch (error: any) {
+            console.error('🚨 标题生成失败:', error.message);
+            if (error.response) {
+                console.error('🔴 API错误响应:', error.response.status, error.response.statusText);
+                console.error('📋 错误详情:', JSON.stringify(error.response.data, null, 2));
+            }
+            throw error;
         }
     }
 }

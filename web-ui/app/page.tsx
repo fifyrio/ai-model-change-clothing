@@ -11,6 +11,7 @@ interface GeneratedImage {
   name: string;
   path: string;
   timestamp: number;
+  xiaohongshuTitle?: string;
 }
 
 export default function Home() {
@@ -387,11 +388,22 @@ export default function Home() {
                       alt={image.name}
                       className="w-full h-64 object-contain bg-gray-50"
                     />
-                    <div className="p-3 bg-white">
+                    <div className="p-3 bg-white space-y-2">
+                      {image.xiaohongshuTitle && (
+                        <div className="bg-gradient-to-r from-pink-50 to-red-50 p-3 rounded-lg border border-pink-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">📝</span>
+                            <span className="text-xs font-semibold text-pink-600">小红书标题</span>
+                          </div>
+                          <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                            {image.xiaohongshuTitle}
+                          </p>
+                        </div>
+                      )}
                       <p className="text-xs text-gray-600 truncate font-medium">
                         {image.name}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-400">
                         {new Date(image.timestamp).toLocaleString()}
                       </p>
                     </div>

@@ -86,6 +86,7 @@ export function saveImageMetadata(
     metadata: {
         clothingDescription: string;
         generationTimestamp: Date;
+        xiaohongshuTitle?: string;
     }
 ): string {
     try {
@@ -94,11 +95,16 @@ export function saveImageMetadata(
         const jsonFileName = `${imageFileName}.json`;
         const jsonPath = path.join(outputDir, jsonFileName);
 
-        const jsonData = {
+        const jsonData: any = {
             imageName: path.basename(imagePath),
             clothingDetails: metadata.clothingDescription,
             timestamp: metadata.generationTimestamp.toISOString()
         };
+
+        // 添加小红书标题（如果存在）
+        if (metadata.xiaohongshuTitle) {
+            jsonData.xiaohongshuTitle = metadata.xiaohongshuTitle;
+        }
 
         fs.writeFileSync(jsonPath, JSON.stringify(jsonData, null, 2));
         return jsonPath;

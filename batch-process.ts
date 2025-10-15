@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { analyzeSingleImage } from './analyze-fashion.js';
 import { ImageGenerator } from './image-generator.js';
+import { AIService } from './ai-service.js';
 import { saveBase64Image, saveImageMetadata } from './utils.js';
 import { SUPPORTED_IMAGE_FORMATS } from './config.js';
 
@@ -111,16 +112,32 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
                     const modelName = `Batch_${baseFileName}${useBase64Mode ? '_base64' : ''}`;
                     const savedPath = saveBase64Image(imageData, 'generated', modelName);
 
-                    // 保存图片元数据到 JSON 文件
+                    // 生成小红书标题
+                    let xiaohongshuTitle = '';
+                    try {
+                        console.log('📝 正在生成小红书标题...');
+                        const aiService = new AIService();
+                        xiaohongshuTitle = await aiService.generateXiaohongshuTitle(clothingDetails, 1);
+                        console.log('✅ 小红书标题已生成');
+                    } catch (titleError: any) {
+                        console.warn('⚠️  小红书标题生成失败:', titleError.message);
+                    }
+
+                    // 保存图片元数据到 JSON 文件（包含小红书标题）
                     const metadataPath = saveImageMetadata(savedPath, {
                         clothingDescription: clothingDetails,
-                        generationTimestamp: generationResult.timestamp
+                        generationTimestamp: generationResult.timestamp,
+                        xiaohongshuTitle: xiaohongshuTitle || undefined
                     });
 
                     console.log('📁 图片已保存到:', savedPath);
                     console.log('📄 元数据已保存到:', metadataPath);
                     if (description) {
                         console.log('💬 描述:', description);
+                    }
+                    if (xiaohongshuTitle) {
+                        console.log('📝 小红书标题:');
+                        console.log(xiaohongshuTitle);
                     }
                 } else {
                     // 如果不是图片数据，显示结果类型

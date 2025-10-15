@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { ImageGenerator } from './image-generator.js';
+import { AIService } from './ai-service.js';
 
 async function main() {
     const clothing = process.argv[2];
@@ -21,6 +22,7 @@ async function main() {
     console.log('');
 
     const generator = new ImageGenerator();
+    const aiService = new AIService();
     const girlName = "Generated";
 
     try {
@@ -34,6 +36,9 @@ async function main() {
 
         if (result.success) {
             console.log('\n=== ✅ 图片生成成功 ===');
+
+            // 统计生成的图片数量（当前只生成1张）
+            const imageCount = 1;
 
             if (result.savedPath) {
                 // 图片已自动保存
@@ -62,6 +67,18 @@ async function main() {
                 }
             } else {
                 console.log('⚠️  生成成功但无内容返回');
+            }
+
+            // 生成小红书标题
+            console.log('\n');
+            try {
+                const xiaohongshuTitle = await aiService.generateXiaohongshuTitle(clothing, imageCount);
+                console.log('\n=== 📝 小红书爆款标题 ===');
+                console.log(xiaohongshuTitle);
+                console.log('========================\n');
+            } catch (titleError: any) {
+                console.warn('\n⚠️  小红书标题生成失败:', titleError.message);
+                console.warn('图片已成功生成，但标题生成出现问题\n');
             }
         } else {
             console.error('\n❌ 生成图片失败:', result.error);
