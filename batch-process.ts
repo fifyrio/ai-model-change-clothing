@@ -146,9 +146,16 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
 // 生成随机模特图片URL
 function getRandomModelUrl(name: string = 'lin'): string {
     const host = "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev";
+
+    // 检查是否为 lin_home_* 特殊模式（使用固定的 frame_1.png）
+    const linHomeMatch = name.match(/^lin_home_(\d+)$/);
+    if (linHomeMatch) {
+        const homeNumber = linHomeMatch[1];
+        return `${host}/lin_home_${homeNumber}/frame_1.png`;
+    }
+
+    // 保持原有的随机逻辑
     const randomNumber = Math.floor(Math.random() * 10) + 1; // 1-10之间的随机数
-    // 确保名称为小写
-    // const lowerCaseName = name.toLowerCase();
     return `${host}/${name}/frame_${randomNumber}.jpg`;
 }
 
@@ -164,6 +171,8 @@ async function main() {
         console.error('示例: npm run batch "https://example.com/model.jpg"');
         console.error('示例: npm run batch random  (默认使用lin，随机选择frame_1到frame_10)');
         console.error('示例: npm run batch random Qiao  (使用Qiao目录，随机选择frame_1到frame_10)');
+        console.error('示例: npm run batch random lin_home_1  (使用lin_home_1目录的frame_1.png)');
+        console.error('示例: npm run batch random lin_home_2  (使用lin_home_2目录的frame_1.png)');
         console.error('示例: npm run batch random Qiao base64  (使用Base64模式)');
         process.exit(1);
     }
