@@ -19,9 +19,9 @@ function getImageFiles(dirPath: string): string[] {
 }
 
 // 处理单张图片
-async function processSingleImage(imagePath: string, modelImageUrl: string, imageIndex: number, totalImages: number, useBase64Mode: boolean = false): Promise<void> {
+async function processSingleImage(imagePath: string, modelImageUrl: string, imageIndex: number, totalImages: number, useBase64Mode: boolean = false): Promise<{ success: boolean; error?: string }> {
     const fileName = path.basename(imagePath);
-    
+
     console.log(`\n📷 [${imageIndex}/${totalImages}] 处理图片: ${fileName}`);
     console.log('='.repeat(50));
 
@@ -32,8 +32,10 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
         const analysisResult = await analyzeSingleImage(imagePath);
 
         if (!analysisResult.success) {
-            console.error('❌ 分析失败:', analysisResult.error);
-            return;
+            const errorMsg = `分析失败: ${analysisResult.error}`;
+            console.error('❌', errorMsg);
+            console.log('⏩ 跳过此图片，继续处理下一张...');
+            return { success: false, error: errorMsg };
         }
 
         const clothingDetails = analysisResult.analysis;
@@ -46,13 +48,27 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
         console.log(`🎨 生成新图片${useBase64Mode ? '（Base64模式）' : ''}...`);
 
         const imageGenerator = new ImageGenerator();
-        const generationResult = useBase64Mode 
+        const generationResult = useBase64Mode
             ? await imageGenerator.generateImageBase64(clothingDetails, modelImageUrl)
             : await imageGenerator.generateImage(clothingDetails, modelImageUrl);
 
         if (!generationResult.success) {
-            console.error('❌ 生成图片失败:', generationResult.error);
-            return;
+            const errorMsg = `生成图片失败: ${generationResult.error}`;
+            console.error('❌', errorMsg);
+            console.log('⏩ 跳过此图片，继续处理下一张...');
+
+            // 即使图片生成失败，仍然尝试生成小红书标题
+            try {
+                console.log('📝 尝试生成小红书标题（基于分析结果）...');
+                const aiService = new AIService();
+                const xiaohongshuTitle = await aiService.generateXiaohongshuTitle(clothingDetails, 1);
+                console.log('✅ 小红书标题已生成:');
+                console.log(xiaohongshuTitle);
+            } catch (titleError: any) {
+                console.warn('⚠️  小红书标题生成失败:', titleError.message);
+            }
+
+            return { success: false, error: errorMsg };
         }
 
         if (generationResult.result) {
@@ -155,8 +171,13 @@ async function processSingleImage(imagePath: string, modelImageUrl: string, imag
         console.log('⏳ 等待3秒...');
         await new Promise(resolve => setTimeout(resolve, 3000));
 
+        return { success: true };
+
     } catch (error: any) {
-        console.error('❌ 处理图片时出错:', error.message);
+        const errorMsg = `处理图片时出错: ${error.message}`;
+        console.error('❌', errorMsg);
+        console.log('⏩ 跳过此图片，继续处理下一张...');
+        return { success: false, error: errorMsg };
     }
 }
 
@@ -240,15 +261,37 @@ async function main() {
     console.log('🖼️  模特图片URL:', modelImageUrl);
     console.log('⚙️  处理模式:', useBase64Mode ? 'Base64模式（尝试获取JSON格式数据）' : '普通模式');
     console.log('📁 支持格式:', SUPPORTED_IMAGE_FORMATS.join(', '));
-    
+
     try {
+        // 记录处理结果
+        const results: Array<{ fileName: string; success: boolean; error?: string }> = [];
+
         // 逐一处理每张图片
         for (let i = 0; i < imageFiles.length; i++) {
-            await processSingleImage(imageFiles[i], modelImageUrl, i + 1, imageFiles.length, useBase64Mode);
+            const result = await processSingleImage(imageFiles[i], modelImageUrl, i + 1, imageFiles.length, useBase64Mode);
+            results.push({
+                fileName: path.basename(imageFiles[i]),
+                success: result.success,
+                error: result.error
+            });
         }
+
+        // 统计结果
+        const successCount = results.filter(r => r.success).length;
+        const failedCount = results.filter(r => !r.success).length;
 
         console.log('\n🎉 === 所有图片处理完成！===');
         console.log(`📊 总计处理: ${imageFiles.length} 张图片`);
+        console.log(`✅ 成功: ${successCount} 张`);
+        console.log(`❌ 失败: ${failedCount} 张`);
+
+        // 如果有失败的，列出详情
+        if (failedCount > 0) {
+            console.log('\n❌ 失败的图片:');
+            results.filter(r => !r.success).forEach(r => {
+                console.log(`  - ${r.fileName}: ${r.error}`);
+            });
+        }
 
     } catch (error: any) {
         console.error('❌ 批处理过程中出错:', error.message);
