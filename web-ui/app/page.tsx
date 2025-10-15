@@ -20,24 +20,32 @@ export default function Home() {
     if (files && files.length > 0) {
       setUploadStatus('');
 
-      const newFilePreviews: FilePreview[] = [];
-
-      // Process all selected files
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newFilePreviews.push({
-            file,
-            preview: reader.result as string,
-          });
-
-          // Update state when all files are processed
-          if (newFilePreviews.length === files.length) {
-            setSelectedFiles((prev) => [...prev, ...newFilePreviews]);
-          }
-        };
-        reader.readAsDataURL(file);
+      const filesArray = Array.from(files);
+      const promises = filesArray.map((file) => {
+        return new Promise<FilePreview>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve({
+              file,
+              preview: reader.result as string,
+            });
+          };
+          reader.onerror = () => {
+            reject(new Error(`Failed to read file: ${file.name}`));
+          };
+          reader.readAsDataURL(file);
+        });
       });
+
+      // Wait for all files to be processed
+      Promise.all(promises)
+        .then((newFilePreviews) => {
+          setSelectedFiles((prev) => [...prev, ...newFilePreviews]);
+        })
+        .catch((error) => {
+          console.error('Error processing files:', error);
+          setUploadStatus('Error processing some files');
+        });
     }
   };
 

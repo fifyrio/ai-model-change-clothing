@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, readdir, unlink } from 'fs/promises';
 import path from 'path';
 
 export async function POST(request: NextRequest) {
@@ -16,6 +16,24 @@ export async function POST(request: NextRequest) {
 
     // Save to chuandai directory (parent directory of web-ui)
     const uploadsDir = path.join(process.cwd(), '..', 'chuandai');
+
+    // Clear all files in chuandai directory before uploading
+    let clearedCount = 0;
+    try {
+      const existingFiles = await readdir(uploadsDir);
+      for (const file of existingFiles) {
+        const filePath = path.join(uploadsDir, file);
+        try {
+          await unlink(filePath);
+          clearedCount++;
+        } catch (error) {
+          console.error(`Error deleting ${file}:`, error);
+        }
+      }
+      console.log(`Cleared ${clearedCount} file(s) from chuandai directory`);
+    } catch (error) {
+      console.error('Error clearing chuandai directory:', error);
+    }
 
     const uploadedFiles: string[] = [];
     const errors: { filename: string; error: string }[] = [];
@@ -38,13 +56,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const message = clearedCount > 0
+      ? `Cleared ${clearedCount} existing file(s). Successfully uploaded ${uploadedFiles.length} of ${files.length} new file(s)`
+      : `Successfully uploaded ${uploadedFiles.length} of ${files.length} file(s)`;
+
     return NextResponse.json({
       success: uploadedFiles.length > 0,
       uploadedCount: uploadedFiles.length,
       totalCount: files.length,
+      clearedCount,
       uploadedFiles,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Successfully uploaded ${uploadedFiles.length} of ${files.length} file(s)`
+      message
     });
   } catch (error) {
     console.error('Upload error:', error);
