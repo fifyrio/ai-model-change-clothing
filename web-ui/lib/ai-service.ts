@@ -50,8 +50,9 @@ export class AIService {
             }
 
             throw new Error('GPT API响应格式错误或内容为空');
-        } catch (error: any) {
-            console.error('🚨 GPT API调用失败:', error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error('🚨 GPT API调用失败:', errorMessage);
             throw error;
         }
     }
@@ -70,14 +71,15 @@ export class AIService {
                 timestamp: startTime,
                 success: true
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             return {
                 filename,
                 modelName: 'OpenAI GPT-5-mini',
                 analysis: '',
                 timestamp: startTime,
                 success: false,
-                error: error.message
+                error: errorMessage
             };
         }
     }
@@ -116,8 +118,9 @@ export class AIService {
             }
 
             throw new Error('标题生成失败：API响应格式错误或内容为空');
-        } catch (error: any) {
-            console.error('🚨 标题生成失败:', error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            console.error('🚨 标题生成失败:', errorMessage);
             throw error;
         }
     }

@@ -1,18 +1,4 @@
 {
-  "buildCommand": "cd web-ui && npm install && npm run build",
-  "outputDirectory": "web-ui/.next",
-  "installCommand": "cd web-ui && npm install",
   "framework": "nextjs",
-  "regions": ["hkg1"],
-  "env": {
-    "OPENROUTER_API_KEY": "@openrouter_api_key",
-    "SITE_URL": "@site_url",
-    "SITE_NAME": "@site_name"
-  },
-  "functions": {
-    "web-ui/app/api/**/*.ts": {
-      "runtime": "nodejs20.x",
-      "maxDuration": 60
-    }
-  }
+  "regions": ["hkg1"]
 }

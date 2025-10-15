@@ -63,12 +63,13 @@ export class ImageGenerator {
                 timestamp: startTime,
                 result: result
             };
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             return {
                 prompt: clothing,
                 imageUrl,
                 success: false,
-                error: error.message,
+                error: errorMessage,
                 timestamp: startTime
             };
         }
@@ -77,9 +78,9 @@ export class ImageGenerator {
     /**
      * 处理 OpenRouter API 响应，提取图片数据
      */
-    private processOpenRouterResponse(completion: any): string {
+    private processOpenRouterResponse(completion: OpenAI.Chat.Completions.ChatCompletion): string {
         const choice = completion.choices?.[0];
-        const message = choice?.message as any;
+        const message = choice?.message as unknown as { images?: ImageResult[]; content?: string };
 
         console.log("🔍 处理 OpenRouter API 响应");
 

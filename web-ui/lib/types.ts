@@ -1,9 +1,7 @@
 // 消息内容类型
-export type MessageContent = {
-    type: "text" | "image_url";
-    text?: string;
-    image_url?: { url: string };
-};
+export type MessageContent =
+    | { type: "text"; text: string }
+    | { type: "image_url"; image_url: { url: string } };
 
 // 图片分析结果
 export interface ImageAnalysisResult {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdir, stat, readFile } from 'fs/promises';
 import path from 'path';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Path to generated directory (parent directory of web-ui)
     const generatedDir = path.join(process.cwd(), '..', 'generated');
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
             const jsonContent = await readFile(jsonFilePath, 'utf-8');
             const metadata = JSON.parse(jsonContent);
             xiaohongshuTitle = metadata.xiaohongshuTitle;
-          } catch (jsonError) {
+          } catch {
             // JSON 文件不存在或解析失败，继续处理
           }
 
