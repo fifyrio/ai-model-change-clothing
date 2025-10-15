@@ -1,5 +1,25 @@
 # ai-model-change-clothing
-ai-model-change-clothing
+
+AI-powered fashion tool for generating clothing images with customizable character models.
+
+## 🚀 New: Web UI Interface
+
+We now have a modern web interface! Launch it with:
+
+```bash
+npm run web
+```
+
+Then open [http://localhost:3000](http://localhost:3000) to:
+- Upload images to the `chuandai` directory
+- Select character models (lin/Qiao/lin_home_1)
+- Generate images with a single click
+
+For more details, see [web-ui/README.md](./web-ui/README.md)
+
+## Command Line Usage
+
+### Batch Processing
 
 npm run batch  "https://pub-9e76573778404f65b02c3ea29d2db5f9.r2.dev/lin/4.png"
 
