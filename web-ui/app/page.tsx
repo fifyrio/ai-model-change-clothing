@@ -168,7 +168,8 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        setGenerateStatus(`Generation completed successfully for character: ${data.character}`);
+        const moveMsg = data.movedCount > 0 ? `Moved ${data.movedCount} file(s) to cache. ` : '';
+        setGenerateStatus(`${moveMsg}Generation completed successfully for character: ${data.character}`);
         // Fetch and display generated images
         await fetchGeneratedImages();
       } else {
